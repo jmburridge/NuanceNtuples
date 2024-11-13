@@ -9,20 +9,35 @@ const double c_ntargs = 800*1e3/0.012*6.20e23;
 // Make it easier to select components of the arrays (x,y,z,t components of 4 momenta and magnitude)
 enum comp {x,y,z,t,m};
 
+// Normalise each vertical strip of a 2D histogram 
+void NormaliseToSpline(TGraph* p_spline,TH1D* p_total,TH2D* p_hist){
+
+  for(int i_e=1;i_e<p_hist->GetNbinsX()+1;i_e++){
+    double xsec = p_spline->Eval(p_hist->GetXaxis()->GetBinCenter(i_e)); 
+    double total = p_total->GetBinContent(i_e);
+
+    if(total == 0) continue;
+    //double integral = p_hist->Integral(i_e,i_e,1,p_hist->GetNbinsY()); 
+    //std::cout << "ratio=" <<  integral/total << "=" << integral << "/" << total << std::endl;
+
+    for(int i_v=1;i_v<p_hist->GetNbinsY();i_v++){
+      p_hist->SetBinContent(i_e,i_v,xsec*p_hist->GetBinContent(i_e,i_v)/total);
+    }
+    
+  }
+
+}
+
 void CalcCrossSections(){
 
-  // Load the total cross section splines - only use the bound nucleons for now
-  // These store the CC and NC cross sections per carbon nucleus
+  // Load the total cross section spline - only use the bound nucleons for now
   TFile* p_fxsec = TFile::Open("NuanceSplines.root");
-  TGraph* p_num_ccc = static_cast<TGraph*>(p_fxsec->Get("num_ccc"));
-  TGraph* p_num_ncc = static_cast<TGraph*>(p_fxsec->Get("num_ncc"));
+  TGraph* p_num_c = static_cast<TGraph*>(p_fxsec->Get("num_c"));
   gROOT->cd();
   p_fxsec->Close();
 
   TFile* p_fin = TFile::Open("nuance_v3_may07_20070507_numu_ma1.35_kappa1.007_1.root");
   TTree* p_tin = static_cast<TTree*>(p_fin->Get("h3"));
-
-  //TH1D* pnumufluxhist = static_cast<TH1D*>(p_fin->Get("h10007001"));
 
   // Setup branches
 
@@ -85,21 +100,34 @@ void CalcCrossSections(){
   p_tin->SetBranchAddress("p_hadron", phadron);
 
   const Long64_t c_nevents = p_tin->GetEntries();
-  std::cout << "Tree has " << c_nevents << " events" << std::endl;
+  //std::cout << "Tree has " << c_nevents << " events" << std::endl;
 
-  // Setup histograms  
-  TH1D* pneutrinoenergyhist = new TH1D("pneutrinoenergyhist",";Neutrino Energy (GeV);#sigma (units)",20,0.0,2.0);
+  // Record the total number of events generated for each neutrino energy
+  TH1D* p_nevents = new TH1D("nevents",";Neutrino Energy (GeV);N Events",20,0.0,2.0);
 
+  // Setup histograms - to normalise using the xsec spline we always set the x axis to be 
+  // in bins of neutrino energy and the y axis as whatever other varuable we want
+  TH2D* p_leptonmomentum_cc = new TH2D("muonmomentum_cc","CC Inclusive;Neutrino Energy (GeV);Lepton Momentum (GeV);d#sigma/dP (10^{-36} cm^2/GeV)",20,0.0,2.0,20,0.0,2.0);
+  TH2D* p_leptonmomentum_nc = new TH2D("muonmomentum_nc","NC Inclusive;Neutrino Energy (GeV);Lepton Momentum (GeV);d#sigma/dP (10^{-36} cm^2/GeV)",20,0.0,2.0,20,0.0,2.0);
+
+  
   for(Long64_t ievent=0;ievent<c_nevents;ievent++){
     p_tin->GetEntry(ievent);
-    //std::cout << p_num_ccc->Eval(pneutrino[t]) << std::endl;
+
+    if(!bound) continue; // only look at interactions on C nuclei for now
+
+    p_nevents->Fill(pneutrino[t]/1e3);
+
+    if(cc) p_leptonmomentum_cc->Fill(pneutrino[t]/1e3,plepton[0][m]/1e3);
+    else p_leptonmomentum_nc->Fill(pneutrino[t]/1e3,plepton[0][m]/1e3);
+
   }
 
-  pneutrinoenergyhist->Scale(1.0/c_ntargs);
-
+  NormaliseToSpline(p_num_c,p_nevents,p_leptonmomentum_cc);
+  NormaliseToSpline(p_num_c,p_nevents,p_leptonmomentum_nc);
+  
   TCanvas* pcanvas = new TCanvas("c","c");
-
-  pneutrinoenergyhist->Draw("HIST");
   pcanvas->Print("test.png");
+  
 
 }

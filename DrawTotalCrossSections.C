@@ -51,7 +51,7 @@ void DrawTotalCrossSections(){
 
   for(Long64_t ientry=0;ientry<c_nentries;ientry++){
     p_tin->GetEntry(ientry);
-    v_Enu.push_back(Enu);      
+    v_Enu.push_back(Enu/1e3); // Convert to GeV 
     v_num_pfcc.push_back(num_pfcc);      
     v_num_pfnc.push_back(num_pfnc);      
     v_num_ecc.push_back(num_ecc);      
@@ -84,7 +84,7 @@ void DrawTotalCrossSections(){
   TGraph* p_g_num_ccc_12 = new TGraph(v_Enu.size(),&(v_Enu[0]),&(v_num_ccc_12[0]));
   TGraph* p_g_num_cnc_12 = new TGraph(v_Enu.size(),&(v_Enu[0]),&(v_num_cnc_12[0]));
    
-  TMultiGraph* p_mg = new TMultiGraph("mg",";E_{#nu} (MeV);#sigma (10^{-36} cm^{2})");
+  TMultiGraph* p_mg = new TMultiGraph("mg",";E_{#nu} (GeV);#sigma (10^{-36} cm^{2})");
   TLegend* p_leg = new TLegend(0.1,0.7,0.5,0.9); 
   p_leg->SetNColumns(2);
  
