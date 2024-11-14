@@ -7,25 +7,22 @@
 const double c_ntargs = 800*1e3/0.012*6.20e23;
 
 // Make it easier to select components of the arrays (x,y,z,t components of 4 momenta and magnitude)
-enum comp {x,y,z,t,m};
+enum comp {z,x,y,t,m};
 
 // Normalise each vertical strip of a 2D histogram 
+// Inputs: p_spline gives the total cross section for C nuclei, p_total is the total number of events
+// on C nuclei in the ntuple for each neutrino energy, p_hist is the distribution of events in the ntuple in
+// neutrino energy and some other variable on the y axis
 void NormaliseToSpline(TGraph* p_spline,TH1D* p_total,TH2D* p_hist){
-
   for(int i_e=1;i_e<p_hist->GetNbinsX()+1;i_e++){
     double xsec = p_spline->Eval(p_hist->GetXaxis()->GetBinCenter(i_e)); 
     double total = p_total->GetBinContent(i_e);
-
     if(total == 0) continue;
-    //double integral = p_hist->Integral(i_e,i_e,1,p_hist->GetNbinsY()); 
-    //std::cout << "ratio=" <<  integral/total << "=" << integral << "/" << total << std::endl;
-
-    for(int i_v=1;i_v<p_hist->GetNbinsY();i_v++){
+    for(int i_v=1;i_v<p_hist->GetNbinsY()+1;i_v++){
       p_hist->SetBinContent(i_e,i_v,xsec*p_hist->GetBinContent(i_e,i_v)/total);
+      //std::cout << p_hist->GetBinContent(i_e,i_v) << std::endl;
     }
-    
   }
-
 }
 
 void CalcCrossSections(){
@@ -36,7 +33,7 @@ void CalcCrossSections(){
   gROOT->cd();
   p_fxsec->Close();
 
-  TFile* p_fin = TFile::Open("nuance_v3_may07_20070507_numu_ma1.35_kappa1.007_1.root");
+  TFile* p_fin = TFile::Open("nuance_v3_may07_20070507_numu_ma1.35_kappa1.007_all.root");
   TTree* p_tin = static_cast<TTree*>(p_fin->Get("h3"));
 
   // Setup branches
@@ -53,8 +50,8 @@ void CalcCrossSections(){
   Int_t           channel;
   Float_t         qsq;
   Float_t         w;
-  Float_t         x;
-  Float_t         y;
+  //Float_t         x;
+  //Float_t         y;
   Float_t         pneutrino[4];
   Float_t         ptarg[5];
   Float_t         vertex[4];
@@ -82,8 +79,8 @@ void CalcCrossSections(){
   p_tin->SetBranchAddress("channel", &channel);
   p_tin->SetBranchAddress("qsq", &qsq);
   p_tin->SetBranchAddress("w", &w);
-  p_tin->SetBranchAddress("x", &x);
-  p_tin->SetBranchAddress("y", &y);
+  //p_tin->SetBranchAddress("x", &x);
+  //p_tin->SetBranchAddress("y", &y);
   p_tin->SetBranchAddress("p_neutrino", pneutrino);
   p_tin->SetBranchAddress("p_targ", ptarg);
   p_tin->SetBranchAddress("vertex", vertex);
@@ -103,13 +100,17 @@ void CalcCrossSections(){
   //std::cout << "Tree has " << c_nevents << " events" << std::endl;
 
   // Record the total number of events generated for each neutrino energy
-  TH1D* p_nevents = new TH1D("nevents",";Neutrino Energy (GeV);N Events",20,0.0,2.0);
+  TH1D* p_nevents = new TH1D("nevents",";Neutrino Energy (GeV);N Events",40,0.0,2.0);
 
   // Setup histograms - to normalise using the xsec spline we always set the x axis to be 
   // in bins of neutrino energy and the y axis as whatever other varuable we want
-  TH2D* p_leptonmomentum_cc = new TH2D("muonmomentum_cc","CC Inclusive;Neutrino Energy (GeV);Lepton Momentum (GeV);d#sigma/dP (10^{-36} cm^2/GeV)",20,0.0,2.0,20,0.0,2.0);
-  TH2D* p_leptonmomentum_nc = new TH2D("muonmomentum_nc","NC Inclusive;Neutrino Energy (GeV);Lepton Momentum (GeV);d#sigma/dP (10^{-36} cm^2/GeV)",20,0.0,2.0,20,0.0,2.0);
+  TH2D* p_leptonmomentum_cc = new TH2D("muonmomentum_cc","CC Inclusive;Neutrino Energy (GeV);Lepton Momentum (GeV);d#sigma/dP (10^{-36} cm^2/GeV)",40,0.0,2.0,40,0.0,2.0);
+  TH2D* p_leptonmomentum_nc = new TH2D("muonmomentum_nc","NC Inclusive;Neutrino Energy (GeV);Lepton Momentum (GeV);d#sigma/dP (10^{-36} cm^2/GeV)",40,0.0,2.0,40,0.0,2.0);
+  TH2D* p_leptoncostheta_cc = new TH2D("muoncostheta_cc","CC Inclusive;Neutrino Energy (GeV);Lepton Cos(#theta);d#sigma/dCos(#theta) (10^{-36} cm^2)",40,0.0,2.0,40,-1.0,1.0);
+  TH2D* p_leptoncostheta_nc = new TH2D("muoncostheta_nc","NC Inclusive;Neutrino Energy (GeV);Lepton Cos(#theta);d#sigma/dCos(#theta) (10^{-36} cm^2)",40,0.0,2.0,40,-1.0,1.0);
 
+  std::map<int,TH2D*> m_ch_leptonmomentum;
+  std::map<int,TH2D*> m_ch_leptoncostheta;
   
   for(Long64_t ievent=0;ievent<c_nevents;ievent++){
     p_tin->GetEntry(ievent);
@@ -121,13 +122,63 @@ void CalcCrossSections(){
     if(cc) p_leptonmomentum_cc->Fill(pneutrino[t]/1e3,plepton[0][m]/1e3);
     else p_leptonmomentum_nc->Fill(pneutrino[t]/1e3,plepton[0][m]/1e3);
 
+    double costheta = plepton[0][z]/plepton[0][m];
+    //std::cout <<  plepton[0][z] << "  " << plepton[0][m] << "  " <<  costheta << std::endl;
+    if(cc) p_leptoncostheta_cc->Fill(pneutrino[t]/1e3,costheta);
+    else p_leptoncostheta_nc->Fill(pneutrino[t]/1e3,costheta);
+
+    if(m_ch_leptonmomentum.find(channel) != m_ch_leptonmomentum.end()){
+      m_ch_leptonmomentum.at(channel)->Fill(pneutrino[t]/1e3,plepton[0][m]/1e3);
+      m_ch_leptoncostheta.at(channel)->Fill(pneutrino[t]/1e3,costheta);
+    }
+    else {
+      m_ch_leptonmomentum[channel] = new TH2D(Form("muonmomentum_%i",channel),";Neutrino Energy (GeV);Lepton Momentum (GeV);d#sigma/dP (10^{-36} cm^2/GeV)",40,0.0,2.0,40,0.0,2.0);
+      m_ch_leptoncostheta[channel] = new TH2D(Form("muoncostheta_%i",channel),";Neutrino Energy (GeV);Lepton Cos(#theta);d#sigma/dCos(#theta) (10^{-36} cm^2)",40,0.0,2.0,40,-1.0,1.0);
+      m_ch_leptonmomentum[channel]->Fill(pneutrino[t]/1e3,plepton[0][m]/1e3);
+      m_ch_leptoncostheta[channel]->Fill(pneutrino[t]/1e3,costheta);
+    }
+
   }
 
   NormaliseToSpline(p_num_c,p_nevents,p_leptonmomentum_cc);
   NormaliseToSpline(p_num_c,p_nevents,p_leptonmomentum_nc);
-  
-  TCanvas* pcanvas = new TCanvas("c","c");
-  pcanvas->Print("test.png");
-  
+  NormaliseToSpline(p_num_c,p_nevents,p_leptoncostheta_cc);
+  NormaliseToSpline(p_num_c,p_nevents,p_leptoncostheta_nc);
 
+  TFile* p_fout = new TFile("NuanceCrossSections.root","RECREATE");
+  p_fout->cd();
+  
+  for(std::map<int,TH2D*>::iterator it = m_ch_leptonmomentum.begin();it != m_ch_leptonmomentum.end();it++){
+    NormaliseToSpline(p_num_c,p_nevents,it->second);
+    it->second->Write(Form("leptonmomentum_%i",it->first));
+  }
+  for(std::map<int,TH2D*>::iterator it = m_ch_leptoncostheta.begin();it != m_ch_leptoncostheta.end();it++){
+    NormaliseToSpline(p_num_c,p_nevents,it->second);
+    it->second->Write(Form("leptoncostheta_%i",it->first));
+  }
+ 
+  TCanvas* p_canvas = new TCanvas("c","c");
+
+  p_leptonmomentum_cc->Draw("colz");
+  p_leptonmomentum_cc->SetStats(0);
+  p_canvas->Print("leptonmomentum_cc.png");
+  p_canvas->Clear();  
+
+  p_leptonmomentum_nc->Draw("colz");
+  p_leptonmomentum_nc->SetStats(0);
+  p_canvas->Print("leptonmomentum_nc.png");
+  p_canvas->Clear();  
+  
+  p_leptoncostheta_cc->Draw("colz");
+  p_leptoncostheta_cc->SetStats(0);
+  p_canvas->Print("leptoncostheta_cc.png");
+  p_canvas->Clear();  
+
+  p_leptoncostheta_nc->Draw("colz");
+  p_leptoncostheta_nc->SetStats(0);
+  p_canvas->Print("leptoncostheta_nc.png");
+  p_canvas->Clear();  
+  
+  p_fout->Close();
+  p_fin->Close();
 }
