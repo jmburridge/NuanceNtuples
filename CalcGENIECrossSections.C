@@ -21,7 +21,7 @@ void NormaliseToSpline(TGraph* p_spline,TH1D* p_total,TH2D* p_hist){
 
 void CalcGENIECrossSections(){
 
-  bool cc_or_nc = true;
+  bool cc_or_nc = false;
 
   // Load the total cross section spline
   
@@ -32,7 +32,7 @@ void CalcGENIECrossSections(){
   gROOT->cd();
   p_fxsec->Close();
 
-  TFile* p_fin = TFile::Open("cc_events.root");
+  TFile* p_fin = cc_or_nc ? TFile::Open("cc_events.root") : TFile::Open("nc_events.root");
   TTree* p_tin = static_cast<TTree*>(p_fin->Get("gst"));
 
   const int c_MAXPART = 25;
@@ -286,6 +286,11 @@ void CalcGENIECrossSections(){
     NormaliseToSpline(p_tot,p_nevents,it->second);
     it->second->Write(Form("leptoncostheta_%i",it->first));
   }
+
+  if(cc_or_nc) p_leptonmomentum->Write("leptonmomentum_cc");
+  else p_leptonmomentum->Write("leptonmomentum_nc");
+  if(cc_or_nc) p_leptoncostheta->Write("leptoncostheta_cc");
+  else p_leptoncostheta->Write("leptoncostheta_nc");
 
   TCanvas* p_canvas = new TCanvas("c","c");
 

@@ -148,7 +148,12 @@ void CalcCrossSections(){
     NormaliseToSpline(p_num_c,p_nevents,it->second);
     it->second->Write(Form("leptoncostheta_%i",it->first));
   }
- 
+
+  p_leptonmomentum_cc->Write("leptonmomentum_cc");
+  p_leptonmomentum_nc->Write("leptonmomentum_nc");
+  p_leptoncostheta_cc->Write("leptoncostheta_cc");
+  p_leptoncostheta_nc->Write("leptoncostheta_nc");
+
   TCanvas* p_canvas = new TCanvas("c","c");
 
   p_leptonmomentum_cc->Draw("colz");
