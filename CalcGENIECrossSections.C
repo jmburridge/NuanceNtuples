@@ -251,8 +251,8 @@ void CalcGENIECrossSections(){
 
   for(Long64_t ievent=0;ievent<c_nevents;ievent++){
     p_tin->GetEntry(ievent);
-
-    //std::cout << Ev << std::endl;
+    
+    //std::cout << nuance_code << std::endl;
 
     p_nevents->Fill(Ev);
 
@@ -275,7 +275,7 @@ void CalcGENIECrossSections(){
   NormaliseToSpline(p_tot,p_nevents,p_leptonmomentum);
   NormaliseToSpline(p_tot,p_nevents,p_leptoncostheta);
 
-  TFile* p_fout = new TFile("GENIECrossSections.root","RECREATE");
+  TFile* p_fout = cc_or_nc ? new TFile("GENIECrossSections_CC.root","RECREATE") : new TFile("GENIECrossSections_NC.root","RECREATE");
   p_fout->cd();
 
   for(std::map<int,TH2D*>::iterator it = m_ch_leptonmomentum.begin();it != m_ch_leptonmomentum.end();it++){
@@ -291,14 +291,14 @@ void CalcGENIECrossSections(){
 
   p_leptonmomentum->Draw("colz");
   p_leptonmomentum->SetStats(0);
-  if(cc_or_nc) p_canvas->Print("leptonmomentum_cc.png");
-  else p_canvas->Print("leptonmomentum_nc.png");
+  if(cc_or_nc) p_canvas->Print("GENIE_leptonmomentum_cc.png");
+  else p_canvas->Print("GENIE_leptonmomentum_nc.png");
   p_canvas->Clear();  
 
   p_leptoncostheta->Draw("colz");
   p_leptoncostheta->SetStats(0);
-  if(cc_or_nc) p_canvas->Print("leptoncostheta_cc.png");
-  else p_canvas->Print("leptoncostheta_nc.png");
+  if(cc_or_nc) p_canvas->Print("GENIE_leptoncostheta_cc.png");
+  else p_canvas->Print("GENIE_leptoncostheta_nc.png");
   p_canvas->Clear();  
 
   p_fout->Close();

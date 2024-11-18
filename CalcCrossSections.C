@@ -153,22 +153,22 @@ void CalcCrossSections(){
 
   p_leptonmomentum_cc->Draw("colz");
   p_leptonmomentum_cc->SetStats(0);
-  p_canvas->Print("leptonmomentum_cc.png");
+  p_canvas->Print("NUANCE_leptonmomentum_cc.png");
   p_canvas->Clear();  
 
   p_leptonmomentum_nc->Draw("colz");
   p_leptonmomentum_nc->SetStats(0);
-  p_canvas->Print("leptonmomentum_nc.png");
+  p_canvas->Print("NUANCE_leptonmomentum_nc.png");
   p_canvas->Clear();  
   
   p_leptoncostheta_cc->Draw("colz");
   p_leptoncostheta_cc->SetStats(0);
-  p_canvas->Print("leptoncostheta_cc.png");
+  p_canvas->Print("NUANCE_leptoncostheta_cc.png");
   p_canvas->Clear();  
 
   p_leptoncostheta_nc->Draw("colz");
   p_leptoncostheta_nc->SetStats(0);
-  p_canvas->Print("leptoncostheta_nc.png");
+  p_canvas->Print("NUANCE_leptoncostheta_nc.png");
   p_canvas->Clear();  
   
   p_fout->Close();
