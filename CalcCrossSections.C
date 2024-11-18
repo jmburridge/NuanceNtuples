@@ -1,11 +1,6 @@
 #include "TFile.h"
 #include "TTree.h"
 
-// estimated number of C atoms in miniboone
-// TODO: Find out the fraction of hydrogen/other elements and the exact mass of the
-// simulation volume
-const double c_ntargs = 800*1e3/0.012*6.20e23;
-
 // Make it easier to select components of the arrays (x,y,z,t components of 4 momenta and magnitude)
 enum comp {z,x,y,t,m};
 
@@ -127,16 +122,13 @@ void CalcCrossSections(){
     if(cc) p_leptoncostheta_cc->Fill(pneutrino[t]/1e3,costheta);
     else p_leptoncostheta_nc->Fill(pneutrino[t]/1e3,costheta);
 
-    if(m_ch_leptonmomentum.find(channel) != m_ch_leptonmomentum.end()){
-      m_ch_leptonmomentum.at(channel)->Fill(pneutrino[t]/1e3,plepton[0][m]/1e3);
-      m_ch_leptoncostheta.at(channel)->Fill(pneutrino[t]/1e3,costheta);
-    }
-    else {
+    if(m_ch_leptonmomentum.find(channel) == m_ch_leptonmomentum.end()){
       m_ch_leptonmomentum[channel] = new TH2D(Form("muonmomentum_%i",channel),";Neutrino Energy (GeV);Lepton Momentum (GeV);d#sigma/dP (10^{-36} cm^2/GeV)",40,0.0,2.0,40,0.0,2.0);
       m_ch_leptoncostheta[channel] = new TH2D(Form("muoncostheta_%i",channel),";Neutrino Energy (GeV);Lepton Cos(#theta);d#sigma/dCos(#theta) (10^{-36} cm^2)",40,0.0,2.0,40,-1.0,1.0);
-      m_ch_leptonmomentum[channel]->Fill(pneutrino[t]/1e3,plepton[0][m]/1e3);
-      m_ch_leptoncostheta[channel]->Fill(pneutrino[t]/1e3,costheta);
     }
+
+    m_ch_leptonmomentum[channel]->Fill(pneutrino[t]/1e3,plepton[0][m]/1e3);
+    m_ch_leptoncostheta[channel]->Fill(pneutrino[t]/1e3,costheta);
 
   }
 
