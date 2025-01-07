@@ -22,6 +22,7 @@ void NormaliseToSpline(TGraph* p_spline,TH1D* p_total,TH2D* p_hist){
 void CalcGENIECrossSections(){
 
   bool cc_or_nc = false;
+  std::string rootdir = "/gluster/data/dune/cthorpe/Generators/";
 
   // Load the total cross section spline
   
@@ -32,7 +33,9 @@ void CalcGENIECrossSections(){
   gROOT->cd();
   p_fxsec->Close();
 
-  TFile* p_fin = cc_or_nc ? TFile::Open("cc_events.root") : TFile::Open("nc_events.root");
+  std::string file = rootdir + "GENIE/" + (cc_or_nc ? "cc_events.root" : "nc_events.root");
+
+  TFile* p_fin = TFile::Open(file.c_str());
   TTree* p_tin = static_cast<TTree*>(p_fin->Get("gst"));
 
   const int c_MAXPART = 25;

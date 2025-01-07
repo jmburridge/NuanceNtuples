@@ -22,13 +22,15 @@ void NormaliseToSpline(TGraph* p_spline,TH1D* p_total,TH2D* p_hist){
 
 void CalcCrossSections(){
 
+  std::string rootdir = "/gluster/data/dune/cthorpe/Generators/";
+
   // Load the total cross section spline - only use the bound nucleons for now
   TFile* p_fxsec = TFile::Open("NuanceSplines.root");
   TGraph* p_num_c = static_cast<TGraph*>(p_fxsec->Get("num_c"));
   gROOT->cd();
   p_fxsec->Close();
 
-  TFile* p_fin = TFile::Open("nuance_v3_may07_20070507_numu_ma1.35_kappa1.007_all.root");
+  TFile* p_fin = TFile::Open((rootdir + "NUANCE/" + "nuance_v3_may07_20070507_numu_ma1.35_kappa1.007_all.root").c_str());
   TTree* p_tin = static_cast<TTree*>(p_fin->Get("h3"));
 
   // Setup branches
