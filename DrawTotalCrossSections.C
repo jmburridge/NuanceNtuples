@@ -1,9 +1,11 @@
 
 void DrawTotalCrossSections(){
 
+  std::string rootdir = "/gluster/data/dune/cthorpe/Generators/";
+
   // First extract the h100 tree from the file
 
-  TFile* p_fin = TFile::Open("nuance_v3_may07_20070507_numu_ma1.35_kappa1.007_1.root");
+  TFile* p_fin = TFile::Open((rootdir + "NUANCE/" + "nuance_v3_may07_20070507_numu_ma1.35_kappa1.007_all.root").c_str());
   TTree* p_tin = static_cast<TTree*>(p_fin->Get("h100"));
 
   Float_t         Enu;
