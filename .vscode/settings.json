@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "CalcCrossSections.C": "cpp",
+        "CalcGENIECrossSections.C": "cpp",
+        "DrawTotalCrossSections.C": "cpp",
+        "CalculateRatios.C": "cpp"
+    }
+}
