@@ -8,14 +8,21 @@ enum comp {z,x,y,t,m};
 // Inputs: p_spline gives the total cross section for C nuclei, p_total is the total number of events
 // on C nuclei in the ntuple for each neutrino energy, p_hist is the distribution of events in the ntuple in
 // neutrino energy and some other variable on the y axis
-void NormaliseToSpline(TGraph* p_spline,TH1D* p_total,TH2D* p_hist){
-  for(int i_e=1;i_e<p_hist->GetNbinsX()+1;i_e++){
-    double xsec = p_spline->Eval(p_hist->GetXaxis()->GetBinCenter(i_e)); 
-    double total = p_total->GetBinContent(i_e);
-    if(total == 0) continue;
-    for(int i_v=1;i_v<p_hist->GetNbinsY()+1;i_v++){
-      p_hist->SetBinContent(i_e,i_v,xsec*p_hist->GetBinContent(i_e,i_v)/total);
-      //std::cout << p_hist->GetBinContent(i_e,i_v) << std::endl;
+void NormaliseToSpline(TGraph* p_spline_protons, p_spline_neutrons ,TH1D* p_total_protons, p_total_neutrons, TH2D* p_hist_protons, p_hist_neutrons){
+  for(int i_e=1;i_e<p_hist_protons->GetNbinsX()+1;i_e++){
+     double xsec_proton = p_spline_protons->Eval(p_hist_protons->GetXaxis()->GetBinCenter(i_e)); 
+     double total_protons = p_total_protons->GetBinContent(i_e);
+    if(total_protons == 0) continue;
+    for(int i_v=1;i_v<p_hist_protons->GetNbinsY()+1;i_v++){
+      p_hist_protons->SetBinContent(i_e,i_v,xsec_proton*p_hist_protons->GetBinContent(i_e,i_v)/total_protons);
+     
+  for(int i_e=1;i_e<p_hist_protons->GetNbinsX()+1;i_e++){
+     double xsec_neutron = p_spline_neutrons->Eval(p_hist_neutrons->GetXaxis()->GetBinCenter(i_e)); 
+     double total_neutrons = p_total_neutrons->GetBinContent(i_e);
+    if(total_neutrons == 0) continue;
+    for(int i_v=1;i_v<p_hist_neutrons->GetNbinsY()+1;i_v++){
+      p_hist_neutrons->SetBinContent(i_e,i_v,xsec_neutron*p_hist_neutrons->GetBinContent(i_e,i_v)/total_neutrons);
+ //std::cout << p_hist->GetBinContent(i_e,i_v) << std::endl;
     }
   }
 }
@@ -100,7 +107,7 @@ void CalcCrossSections(){
   TH1D* p_nevents = new TH1D("nevents",";Neutrino Energy (GeV);N Events",40,0.0,2.0);
 
   // Setup histograms - to normalise using the xsec spline we always set the x axis to be 
-  // in bins of neutrino energy and the y axis as whatever other varuable we want
+  // in bins of neutrino energy and the y axis as whatever other variable we want
   TH2D* p_leptonmomentum_cc = new TH2D("muonmomentum_cc","CC Inclusive;Neutrino Energy (GeV);Lepton Momentum (GeV);d#sigma/dP (10^{-36} cm^2/GeV)",40,0.0,2.0,40,0.0,2.0);
   TH2D* p_leptonmomentum_nc = new TH2D("muonmomentum_nc","NC Inclusive;Neutrino Energy (GeV);Lepton Momentum (GeV);d#sigma/dP (10^{-36} cm^2/GeV)",40,0.0,2.0,40,0.0,2.0);
   TH2D* p_leptoncostheta_cc = new TH2D("muoncostheta_cc","CC Inclusive;Neutrino Energy (GeV);Lepton Cos(#theta);d#sigma/dCos(#theta) (10^{-36} cm^2)",40,0.0,2.0,40,-1.0,1.0);
@@ -181,9 +188,5 @@ void CalcCrossSections(){
   p_fout->Close();
   p_fin->Close();
   
-  std::cout<<"Testing"<<std::endl;
-//Test comment: fork test.
-//Test comment: Codespace test.
-//Test comment: VS code Test
 }
 
