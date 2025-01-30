@@ -8,20 +8,14 @@ enum comp {z,x,y,t,m};
 // Inputs: p_spline gives the total cross section for C nuclei, p_total is the total number of events
 // on C nuclei in the ntuple for each neutrino energy, p_hist is the distribution of events in the ntuple in
 // neutrino energy and some other variable on the y axis
-void NormaliseToSpline(TGraph* p_spline_protons, p_spline_neutrons ,TH1D* p_total_protons, p_total_neutrons, TH2D* p_hist_protons, p_hist_neutrons){
-  for(int i_e=1;i_e<p_hist_protons->GetNbinsX()+1;i_e++){
-     double xsec_proton = p_spline_protons->Eval(p_hist_protons->GetXaxis()->GetBinCenter(i_e)); 
-     double total_protons = p_total_protons->GetBinContent(i_e);
-    if(total_protons == 0) continue;
-    for(int i_v=1;i_v<p_hist_protons->GetNbinsY()+1;i_v++){
-      p_hist_protons->SetBinContent(i_e,i_v,xsec_proton*p_hist_protons->GetBinContent(i_e,i_v)/total_protons);
-     
-  for(int i_e=1;i_e<p_hist_protons->GetNbinsX()+1;i_e++){
-     double xsec_neutron = p_spline_neutrons->Eval(p_hist_neutrons->GetXaxis()->GetBinCenter(i_e)); 
-     double total_neutrons = p_total_neutrons->GetBinContent(i_e);
-    if(total_neutrons == 0) continue;
-    for(int i_v=1;i_v<p_hist_neutrons->GetNbinsY()+1;i_v++){
-      p_hist_neutrons->SetBinContent(i_e,i_v,xsec_neutron*p_hist_neutrons->GetBinContent(i_e,i_v)/total_neutrons);
+// modified it to an ambiguous 'target' particle: tgt. this can be either a bound  proton or a neutron.
+void NormaliseToSpline(TGraph* p_spline_tgt, TH1D* p_total_tgt, TH2D* p_hist_tgt){
+  for(int i_e=1;i_e<p_hist_tgt->GetNbinsX()+1;i_e++){
+     double xsec_tgt = p_spline_tgt->Eval(p_hist_tgt->GetXaxis()->GetBinCenter(i_e)); 
+     double total_tgt = p_total_tgt->GetBinContent(i_e);
+    if(total_tgt == 0) continue;
+    for(int i_v=1;i_v<p_hist_tgt->GetNbinsY()+1;i_v++){
+      p_hist_tgt->SetBinContent(i_e,i_v,xsec_tgt*p_hist_tgt->GetBinContent(i_e,i_v)/total_tgt);
  //std::cout << p_hist->GetBinContent(i_e,i_v) << std::endl;
     }
   }
@@ -29,7 +23,7 @@ void NormaliseToSpline(TGraph* p_spline_protons, p_spline_neutrons ,TH1D* p_tota
 
 void CalcCrossSections(){
 
-  std::string rootdir = "/gluster/data/dune/cthorpe/Generators/";
+  std::string rootdir = "/exp/uboone/data/users/jburridg/Nuance/";
 
   // Load the total cross section spline - only use the bound nucleons for now
   TFile* p_fxsec = TFile::Open("NuanceSplines.root");
@@ -111,48 +105,93 @@ void CalcCrossSections(){
   //std::cout << "Tree has " << c_nevents << " events" << std::endl;
 
   // Record the total number of events generated for each neutrino energy
-  TH1D* p_nevents = new TH1D("nevents",";Neutrino Energy (GeV);N Events",40,0.0,2.0);
-
+  TH1D* p_nevents_p = new TH1D("nevents_p",";Neutrino Energy (GeV);N Events",40,0.0,2.0);
+  TH1D* p_nevents_n = new TH1D("nevents_n",";Neutrino Energy (GeV);N Events",40,0.0,2.0);
   // Setup histograms - to normalise using the xsec spline we always set the x axis to be 
   // in bins of neutrino energy and the y axis as whatever other variable we want
-  TH2D* p_leptonmomentum_cc = new TH2D("muonmomentum_cc","CC Inclusive;Neutrino Energy (GeV);Lepton Momentum (GeV);d#sigma/dP (10^{-36} cm^2/GeV)",40,0.0,2.0,40,0.0,2.0);
-  TH2D* p_leptonmomentum_nc = new TH2D("muonmomentum_nc","NC Inclusive;Neutrino Energy (GeV);Lepton Momentum (GeV);d#sigma/dP (10^{-36} cm^2/GeV)",40,0.0,2.0,40,0.0,2.0);
-  TH2D* p_leptoncostheta_cc = new TH2D("muoncostheta_cc","CC Inclusive;Neutrino Energy (GeV);Lepton Cos(#theta);d#sigma/dCos(#theta) (10^{-36} cm^2)",40,0.0,2.0,40,-1.0,1.0);
-  TH2D* p_leptoncostheta_nc = new TH2D("muoncostheta_nc","NC Inclusive;Neutrino Energy (GeV);Lepton Cos(#theta);d#sigma/dCos(#theta) (10^{-36} cm^2)",40,0.0,2.0,40,-1.0,1.0);
+  // create more histograms here for protons and neutrons. 
 
-  std::map<int,TH2D*> m_ch_leptonmomentum;
-  std::map<int,TH2D*> m_ch_leptoncostheta;
+  //define histograms for lepton momentum   
+  TH2D* p_leptonmomentum_cc_p = new TH2D("muonmomentum_cc","CC Proton;Neutrino Energy (GeV);Lepton Momentum (GeV);d#sigma/dP (10^{-36} cm^2/GeV)",40,0.0,2.0,40,0.0,2.0);
+  TH2D* p_leptonmomentum_cc_n = new TH2D("muonmomentum_cc","CC Neutron Target;Neutrino Energy (GeV);Lepton Momentum (GeV);d#sigma/dP (10^{-36} cm^2/GeV)",40,0.0,2.0,40,0.0,2.0);
+
+  TH2D* p_leptonmomentum_nc_p = new TH2D("muonmomentum_nc","NC Proton Target;Neutrino Energy (GeV);Lepton Momentum (GeV);d#sigma/dP (10^{-36} cm^2/GeV)",40,0.0,2.0,40,0.0,2.0);
+  TH2D* p_leptonmomentum_nc_n = new TH2D("muonmomentum_nc","NC Neutron Target;Neutrino Energy (GeV);Lepton Momentum (GeV);d#sigma/dP (10^{-36} cm^2/GeV)",40,0.0,2.0,40,0.0,2.0);
+ 
+  // Define Histograms for lepton costheta
+  TH2D* p_leptoncostheta_cc_p = new TH2D("muoncostheta_cc","CC Proton Target;Neutrino Energy (GeV);Lepton Cos(#theta);d#sigma/dCos(#theta) (10^{-36} cm^2)",40,0.0,2.0,40,-1.0,1.0);
+ TH2D* p_leptoncostheta_cc_n = new TH2D("muoncostheta_cc","CC Neutron Target;Neutrino Energy (GeV);Lepton Cos(#theta);d#sigma/dCos(#theta) (10^{-36} cm^2)",40,0.0,2.0,40,-1.0,1.0);
+
+  TH2D* p_leptoncostheta_nc_p = new TH2D("muoncostheta_nc","NC Proton Target;Neutrino Energy (GeV);Lepton Cos(#theta);d#sigma/dCos(#theta) (10^{-36} cm^2)",40,0.0,2.0,40,-1.0,1.0);
+  TH2D* p_leptoncostheta_nc_n = new TH2D("muoncostheta_nc","NC Neutron Target;Neutrino Energy (GeV);Lepton Cos(#theta);d#sigma/dCos(#theta) (10^{-36} cm^2)",40,0.0,2.0,40,-1.0,1.0);
+
   
+  std::map<std::pair<int, int>, TH2D*> m_ch_leptonmomentum;  // Using pair to hold channel and target type
+  std::map<std::pair<int, int>, TH2D*> m_ch_leptoncostheta;
+
   for(Long64_t ievent=0;ievent<c_nevents;ievent++){
     p_tin->GetEntry(ievent);
 
     if(!bound) continue; // only look at interactions on C nuclei for now 
     p_nevents->Fill(pneutrino[t]/1e3);
 
-   // if (target == 2212){}
-   // if (target == 2112){}  
-    if(cc) p_leptonmomentum_cc->Fill(pneutrino[t]/1e3,plepton[0][m]/1e3);        
-    else p_leptonmomentum_nc->Fill(pneutrino[t]/1e3,plepton[0][m]/1e3);
+
+    int nucleon_type = (target == 2212) ? 2212 : 2112;  // Distinguish proton (2212) and neutron (2112)
+    std::pair<int, int> key = std::make_pair(channel, nucleon_type);
 
     double costheta = plepton[0][z]/plepton[0][m];
-    //std::cout <<  plepton[0][z] << "  " << plepton[0][m] << "  " <<  costheta << std::endl;
-    if(cc) p_leptoncostheta_cc->Fill(pneutrino[t]/1e3,costheta);
-    else p_leptoncostheta_nc->Fill(pneutrino[t]/1e3,costheta);
 
-    if(m_ch_leptonmomentum.find(channel) == m_ch_leptonmomentum.end()){
-      m_ch_leptonmomentum[channel] = new TH2D(Form("muonmomentum_%i",channel),";Neutrino Energy (GeV);Lepton Momentum (GeV);d#sigma/dP (10^{-36} cm^2/GeV)",40,0.0,2.0,40,0.0,2.0);
-      m_ch_leptoncostheta[channel] = new TH2D(Form("muoncostheta_%i",channel),";Neutrino Energy (GeV);Lepton Cos(#theta);d#sigma/dCos(#theta) (10^{-36} cm^2)",40,0.0,2.0,40,-1.0,1.0);
+    //adding boolean values for proton and neutron traget identification
+    bool target_is_proton = (target = 2122);
+    bool target_is_neutron = (target = 2112); //PDG ID codes 
+
+    // adding nested conditional statements to distinguish between proton and neutron targets. 
+    if (target_is_proton){
+        p_nevents_p->Fill(pneutrino[t]/1e3);
+        if(cc) {
+	       
+		p_leptonmomentum_cc_p->Fill(pneutrino[t]/1e3,plepton[0][m]/1e3);
+                p_leptoncostheta_cc_p->Fill(pneutrino[t]/1e3,costheta);
+	}
+	else {       
+		p_leptonmomentum_nc_p->Fill(pneutrino[t]/1e3,plepton[0][m]/1e3);
+                p_leptoncostheta_nc_p->Fill(pneutrino[t]/1e3,costheta);
+	}
+    }
+    else if (target_is_neutron) {
+       p_nevents_n->Fill(pneutrino[t]/1e3);
+       if(cc) {
+	      p_leptonmomentum_cc_n->Fill(pneutrino[t]/1e3,plepton[0][m]/1e3);
+              p_leptoncostheta_cc_n->Fill(pneutrino[t]/1e3,costheta);
+       }
+       else {
+	       p_leptonmomentum_nc_n->Fill(pneutrino[t]/1e3,plepton[0][m]/1e3);
+               p_leptoncostheta_nc_n->Fill(pneutrino[t]/1e3,costheta);
+
+       }
+    } 
+    //std::cout <<  plepton[0][z] << "  " << plepton[0][m] << "  " <<  costheta << std::endl;
+
+
+     if (m_ch_leptonmomentum.find(key) == m_ch_leptonmomentum.end()) {
+        // Create new histograms for each channel and nucleon type
+        m_ch_leptonmomentum[key] = new TH2D(Form("leptonmomentum_%i_%i", channel, nucleon_type), ";Neutrino Energy (GeV);Lepton Momentum (GeV);d#sigma/dP (10^{-36} cm^2/GeV)", 40, 0.0, 2.0, 40, 0.0, 2.0);
+        m_ch_leptoncostheta[key] = new TH2D(Form("leptoncostheta_%i_%i", channel, nucleon_type), ";Neutrino Energy (GeV);Lepton Cos(#theta);d#sigma/dCos(#theta) (10^{-36} cm^2)", 40, 0.0, 2.0, 40, -1.0, 1.0);
     }
 
-    m_ch_leptonmomentum[channel]->Fill(pneutrino[t]/1e3,plepton[0][m]/1e3);
-    m_ch_leptoncostheta[channel]->Fill(pneutrino[t]/1e3,costheta);
+    m_ch_leptonmomentum[key]->Fill(pneutrino[t]/1e3,plepton[0][m]/1e3);
+    m_ch_leptoncostheta[key]->Fill(pneutrino[t]/1e3,costheta);
 
   }
 
-  NormaliseToSpline(p_num_c,p_nevents,p_leptonmomentum_cc);
-  NormaliseToSpline(p_num_c,p_nevents,p_leptonmomentum_nc);
-  NormaliseToSpline(p_num_c,p_nevents,p_leptoncostheta_cc);
-  NormaliseToSpline(p_num_c,p_nevents,p_leptoncostheta_nc);
+  NormaliseToSpline(p_num_pbcc,p_nevents_p,p_leptonmomentum_cc_p);
+  NormaliseToSpline(p_num_pbnc,p_nevents_p,p_leptonmomentum_nc_p); //p_nevents_p needs to be seprated into nc and cc? 
+  NormaliseToSpline(p_num_nbcc,p_nevents_n,p_leptonmomentum_cc_n);
+  NormaliseToSpline(p_num_nbnc,p_nevents_n,p_leptonmomentum_nc_n);
+  NormaliseToSpline(p_num_pbcc,p_nevents_p,p_leptoncostheta_cc_p);
+  NormaliseToSpline(p_num_pbnc,p_nevents_p,p_leptoncostheta_nc_p);
+  NormaliseToSpline(p_num_nbcc,p_nevents_n,p_leptoncostheta_cc_n);
+  NormaliseToSpline(p_num_nbnc,p_nevents_n,p_leptoncostheta_nc_n);
 
   TFile* p_fout = new TFile("NuanceCrossSections.root","RECREATE");
   p_fout->cd();
