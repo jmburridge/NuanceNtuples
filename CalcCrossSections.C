@@ -27,22 +27,23 @@ void CalcCrossSections(){
 
   // Load the total cross section spline - only use the bound nucleons for now
   TFile* p_fxsec = TFile::Open("NuanceSplines.root");
-  TGraph* p_num_c = static_cast<TGraph*>(p_fxsec->Get("num_c"));
-  //Adding in the bound proton and neutron xsec splines too. this will allow us to separate the C nuclei into protons and neutrons. 
- // TGraph* p_num_nbcc = static_cast<TGraph*>(p_fxsec->Get("num_nbcc"));
- // TGraph* p_num_nbnc = static_cast<TGraph*>(p_fxsec->Get("num_nbnc"));
- // TGraph* p_num_pbcc = static_cast<TGraph*>(p_fxsec->Get("num_pbcc"));
- // TGraph* p_num_pbnc = static_cast<TGraph*>(p_fxsec->Get("num_pbnc"));
+//  TGraph* p_num_c = static_cast<TGraph*>(p_fxsec->Get("num_c"));
+  //Adding in the bound proton and neutron xsec splines too.
+  //This will allow us to separate the C nuclei into protons and neutrons. 
+  TGraph* p_num_nbcc = static_cast<TGraph*>(p_fxsec->Get("num_nbcc"));
+  TGraph* p_num_nbnc = static_cast<TGraph*>(p_fxsec->Get("num_nbnc"));
+  TGraph* p_num_pbcc = static_cast<TGraph*>(p_fxsec->Get("num_pbcc"));
+  TGraph* p_num_pbnc = static_cast<TGraph*>(p_fxsec->Get("num_pbnc"));
   // Ensures the graph object is accessible after closing the file. 
   gROOT->cd();
   // closes file.
   p_fxsec->Close();
-
+  
+  //Open the file and find the tree
   TFile* p_fin = TFile::Open((rootdir + "NUANCE/" + "nuance_v3_may07_20070507_numu_ma1.35_kappa1.007_all.root").c_str());
   TTree* p_tin = static_cast<TTree*>(p_fin->Get("h3"));
 
   // Setup branches
-
   UChar_t         cc;
   UChar_t         bound;
   Int_t           event;
