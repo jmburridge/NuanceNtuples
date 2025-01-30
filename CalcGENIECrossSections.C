@@ -22,7 +22,7 @@ void NormaliseToSpline(TGraph* p_spline,TH1D* p_total,TH2D* p_hist){
 void CalcGENIECrossSections(){
 
   bool cc_or_nc = false;
-  std::string rootdir = "/gluster/data/dune/cthorpe/Generators/";
+  std::string rootdir = "/exp/uboone/data/users/jburridg/Nuance/";
 
   // Load the total cross section spline
   
