@@ -120,11 +120,11 @@ void CalcCrossSections(){
   TH2D* p_leptonmomentum_nc_n = new TH2D("muonmomentum_nc","NC Neutron Target;Neutrino Energy (GeV);Lepton Momentum (GeV);d#sigma/dP (10^{-36} cm^2/GeV)",40,0.0,2.0,40,0.0,2.0);
  
   // Define Histograms for lepton costheta
-  TH2D* p_leptoncostheta_cc_p = new TH2D("muoncostheta_cc","CC Proton Target;Neutrino Energy (GeV);Lepton Cos(#theta);d#sigma/dCos(#theta) (10^{-36} cm^2)",40,0.0,2.0,40,-1.0,1.0);
- TH2D* p_leptoncostheta_cc_n = new TH2D("muoncostheta_cc","CC Neutron Target;Neutrino Energy (GeV);Lepton Cos(#theta);d#sigma/dCos(#theta) (10^{-36} cm^2)",40,0.0,2.0,40,-1.0,1.0);
+  TH2D* p_leptoncostheta_cc_p = new TH2D("muoncostheta_cc_p","CC Proton Target;Neutrino Energy (GeV);Lepton Cos(#theta);d#sigma/dCos(#theta) (10^{-36} cm^2)",40,0.0,2.0,40,-1.0,1.0);
+ TH2D* p_leptoncostheta_cc_n = new TH2D("muoncostheta_cc_n","CC Neutron Target;Neutrino Energy (GeV);Lepton Cos(#theta);d#sigma/dCos(#theta) (10^{-36} cm^2)",40,0.0,2.0,40,-1.0,1.0);
 
-  TH2D* p_leptoncostheta_nc_p = new TH2D("muoncostheta_nc","NC Proton Target;Neutrino Energy (GeV);Lepton Cos(#theta);d#sigma/dCos(#theta) (10^{-36} cm^2)",40,0.0,2.0,40,-1.0,1.0);
-  TH2D* p_leptoncostheta_nc_n = new TH2D("muoncostheta_nc","NC Neutron Target;Neutrino Energy (GeV);Lepton Cos(#theta);d#sigma/dCos(#theta) (10^{-36} cm^2)",40,0.0,2.0,40,-1.0,1.0);
+  TH2D* p_leptoncostheta_nc_p = new TH2D("muoncostheta_nc_p","NC Proton Target;Neutrino Energy (GeV);Lepton Cos(#theta);d#sigma/dCos(#theta) (10^{-36} cm^2)",40,0.0,2.0,40,-1.0,1.0);
+  TH2D* p_leptoncostheta_nc_n = new TH2D("muoncostheta_nc_n","NC Neutron Target;Neutrino Energy (GeV);Lepton Cos(#theta);d#sigma/dCos(#theta) (10^{-36} cm^2)",40,0.0,2.0,40,-1.0,1.0);
 
   
   std::map<std::pair<int, int>, TH2D*> m_ch_leptonmomentum;  // Using pair to hold channel and target type
@@ -134,17 +134,24 @@ void CalcCrossSections(){
     p_tin->GetEntry(ievent);
 
     if(!bound) continue; // only look at interactions on C nuclei for now 
-    p_nevents->Fill(pneutrino[t]/1e3);
+   
+  
+    // Define nucleon_type based on target PID
+    std::string nucleon_type;
+    if (target == 2212) {
+        nucleon_type = "p";  // Proton
+    } else if (target == 2112) {
+        nucleon_type = "n";  // Neutron
+    } else {
+        nucleon_type = "unknown";  // In case there's a different target not accounted for
+    }
 
-
-    int nucleon_type = (target == 2212) ? 2212 : 2112;  // Distinguish proton (2212) and neutron (2112)
-    std::pair<int, int> key = std::make_pair(channel, nucleon_type);
-
+    std::pair<int, std::string> key = std::make_pair(channel, nucleon_type);
     double costheta = plepton[0][z]/plepton[0][m];
 
     //adding boolean values for proton and neutron traget identification
-    bool target_is_proton = (target = 2122);
-    bool target_is_neutron = (target = 2112); //PDG ID codes 
+    bool target_is_proton = (target == 2122); //can I move this up to the above statements to make easier?
+    bool target_is_neutron = (target == 2112); //PDG ID codes 
 
     // adding nested conditional statements to distinguish between proton and neutron targets. 
     if (target_is_proton){
@@ -176,8 +183,8 @@ void CalcCrossSections(){
 
      if (m_ch_leptonmomentum.find(key) == m_ch_leptonmomentum.end()) {
         // Create new histograms for each channel and nucleon type
-        m_ch_leptonmomentum[key] = new TH2D(Form("leptonmomentum_%i_%i", channel, nucleon_type), ";Neutrino Energy (GeV);Lepton Momentum (GeV);d#sigma/dP (10^{-36} cm^2/GeV)", 40, 0.0, 2.0, 40, 0.0, 2.0);
-        m_ch_leptoncostheta[key] = new TH2D(Form("leptoncostheta_%i_%i", channel, nucleon_type), ";Neutrino Energy (GeV);Lepton Cos(#theta);d#sigma/dCos(#theta) (10^{-36} cm^2)", 40, 0.0, 2.0, 40, -1.0, 1.0);
+        m_ch_leptonmomentum[key] = new TH2D(Form("leptonmomentum_%i_%s", channel, nucleon_type), ";Neutrino Energy (GeV);Lepton Momentum (GeV);d#sigma/dP (10^{-36} cm^2/GeV)", 40, 0.0, 2.0, 40, 0.0, 2.0);
+        m_ch_leptoncostheta[key] = new TH2D(Form("leptoncostheta_%i_%s", channel, nucleon_type), ";Neutrino Energy (GeV);Lepton Cos(#theta);d#sigma/dCos(#theta) (10^{-36} cm^2)", 40, 0.0, 2.0, 40, -1.0, 1.0);
     }
 
     m_ch_leptonmomentum[key]->Fill(pneutrino[t]/1e3,plepton[0][m]/1e3);
@@ -197,44 +204,69 @@ void CalcCrossSections(){
   TFile* p_fout = new TFile("NuanceCrossSections.root","RECREATE");
   p_fout->cd();
   
-  for(std::map<int,TH2D*>::iterator it = m_ch_leptonmomentum.begin();it != m_ch_leptonmomentum.end();it++){
+  for(std::map<std::pair<int, std::string>,TH2D*>::iterator it = m_ch_leptonmomentum.begin();it != m_ch_leptonmomentum.end();it++){
     NormaliseToSpline(p_num_c,p_nevents,it->second);
-    it->second->Write(Form("leptonmomentum_%i",it->first));
+    it->second->Write(Form("leptonmomentum_%i_%s",it->first));
+  NormaliseToSpline(p_num_c,p_nevents,p_leptoncostheta_nc);
   }
-  for(std::map<int,TH2D*>::iterator it = m_ch_leptoncostheta.begin();it != m_ch_leptoncostheta.end();it++){
+  for(std::map<std::pair<int, std::string>,TH2D*>::iterator it = m_ch_leptoncostheta.begin();it != m_ch_leptoncostheta.end();it++){
     NormaliseToSpline(p_num_c,p_nevents,it->second);
-    it->second->Write(Form("leptoncostheta_%i",it->first));
+    it->second->Write(Form("leptoncostheta_%i_%s",it->first));
   }
 
-  p_leptonmomentum_cc->Write("leptonmomentum_cc");
-  p_leptonmomentum_nc->Write("leptonmomentum_nc");
-  p_leptoncostheta_cc->Write("leptoncostheta_cc");
-  p_leptoncostheta_nc->Write("leptoncostheta_nc");
+  p_leptonmomentum_cc_p->Write("leptonmomentum_cc_p");
+  p_leptonmomentum_nc_p->Write("leptonmomentum_nc_p");
+  p_leptoncostheta_cc_p->Write("leptoncostheta_cc_p");
+  p_leptoncostheta_nc_p->Write("leptoncostheta_nc_p");
+  
+  p_leptonmomentum_cc_n->Write("leptonmomentum_cc_n");
+  p_leptonmomentum_nc_n->Write("leptonmomentum_nc_n");
+  p_leptoncostheta_cc_n->Write("leptoncostheta_cc_n");
+  p_leptoncostheta_nc_n->Write("leptoncostheta_nc_n");
 
   TCanvas* p_canvas = new TCanvas("c","c");
 
-  p_leptonmomentum_cc->Draw("colz");
-  p_leptonmomentum_cc->SetStats(0);
-  p_canvas->Print("NUANCE_leptonmomentum_cc.png");
+  p_leptonmomentum_cc_p->Draw("colz");
+  p_leptonmomentum_cc_p->SetStats(0);
+  p_canvas->Print("NUANCE_leptonmomentum_cc_p.png");
+  p_canvas->Clear(); 
+
+  p_leptonmomentum_cc_n->Draw("colz");
+  p_leptonmomentum_cc_n->SetStats(0);
+  p_canvas->Print("NUANCE_leptonmomentum_cc_n.png");
+  p_canvas->Clear(); 
+
+  p_leptonmomentum_nc_p->Draw("colz");
+  p_leptonmomentum_nc_p->SetStats(0);
+  p_canvas->Print("NUANCE_leptonmomentum_nc_p.png");
   p_canvas->Clear();  
 
-  p_leptonmomentum_nc->Draw("colz");
-  p_leptonmomentum_nc->SetStats(0);
-  p_canvas->Print("NUANCE_leptonmomentum_nc.png");
-  p_canvas->Clear();  
+  p_leptonmomentum_nc_n->Draw("colz");
+  p_leptonmomentum_nc_n->SetStats(0);
+  p_canvas->Print("NUANCE_leptonmomentum_nc_n.png");
+  p_canvas->Clear();
   
-  p_leptoncostheta_cc->Draw("colz");
-  p_leptoncostheta_cc->SetStats(0);
-  p_canvas->Print("NUANCE_leptoncostheta_cc.png");
+  p_leptoncostheta_cc_p->Draw("colz");
+  p_leptoncostheta_cc_p->SetStats(0);
+  p_canvas->Print("NUANCE_leptoncostheta_cc_p.png");
   p_canvas->Clear();  
 
-  p_leptoncostheta_nc->Draw("colz");
-  p_leptoncostheta_nc->SetStats(0);
-  p_canvas->Print("NUANCE_leptoncostheta_nc.png");
+  p_leptoncostheta_cc_n->Draw("colz");
+  p_leptoncostheta_cc_n->SetStats(0);
+  p_canvas->Print("NUANCE_leptoncostheta_cc_n.png");
+  p_canvas->Clear();
+
+  p_leptoncostheta_nc_p->Draw("colz");
+  p_leptoncostheta_nc_p->SetStats(0);
+  p_canvas->Print("NUANCE_leptoncostheta_nc_p.png");
+  p_canvas->Clear();
+
+  p_leptoncostheta_nc_n->Draw("colz");
+  p_leptoncostheta_nc_n->SetStats(0);
+  p_canvas->Print("NUANCE_leptoncostheta_nc_n.png");
   p_canvas->Clear();  
   
   p_fout->Close();
   p_fin->Close();
   
 }
-
